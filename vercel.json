@@ -1,0 +1,5 @@
+{
+  "rewrites": [
+    { "source": "/self-assist", "destination": "/self-assist.html" }
+  ]
+}
