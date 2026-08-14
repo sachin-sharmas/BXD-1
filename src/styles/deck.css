@@ -1,0 +1,260 @@
+/* =====================================================================
+   BXD deck — the stylesheet React cannot express.
+
+   Slide bodies come from `src/deck/slides.js`, generated from ref.pptx by
+   tools/render.py, and are mounted as HTML. Tailwind utilities cannot reach
+   inside a string of markup, so every rule that styles the generated shapes --
+   the primitives, the interaction layer and the entrance -- has to live here,
+   exactly as it did in the static build. The page chrome, which React does
+   render, is Tailwind and is not in this file.
+
+   Everything inside .slide is in the deck's native 1280x720 px grid and is
+   scaled with one transform, so the design is identical on every screen.
+   ===================================================================== */
+*{box-sizing:border-box}
+:root{
+  --violet:#6432FA; --cyan:#46E6E6; --magenta:#C83CFF; --blue:#0096D7;
+  --ink:#1a1a1a; --page:#e9ebf2;
+  --stageW:1280px; --stageH:720px;
+  --ui:'Segoe UI',Arial,Helvetica,sans-serif;
+}
+/* the slide itself: native pptx pixel grid, never re-flowed */
+.slide{position:relative;width:1280px;height:720px;background:#fff;overflow:hidden;
+  transform-origin:top left;
+  font-family:Arial,Helvetica,sans-serif;color:#000;
+  -webkit-font-smoothing:antialiased;text-rendering:geometricPrecision}
+
+/* generated primitives ------------------------------------------- */
+.slide .sp{position:absolute}
+.slide .gp{position:absolute}
+.slide .gpi{position:relative;transform-origin:0 0}
+.slide .sg{position:absolute;left:0;top:0;overflow:visible;pointer-events:none}
+.slide img.sp{object-fit:fill}
+.slide .tx{position:absolute;left:0;top:0;width:100%;height:100%;
+  display:flex;flex-direction:column;overflow:visible}
+/* -0.01px compensates the sub-pixel difference between PowerPoint's and
+   Chrome's line-break measurement, so lines wrap at the same words. */
+.slide .tx p{margin:0;white-space:pre-wrap;letter-spacing:-0.01px}
+.slide .tx.nw p{white-space:pre}   /* bodyPr wrap="none" */
+.slide .tx .bu{position:absolute;white-space:pre}
+.slide .tbl table{border-collapse:collapse;table-layout:fixed;font-size:inherit}
+.slide .tbl td{overflow:hidden;vertical-align:top}
+.slide .tbl td p{white-space:pre-wrap}
+
+
+/* --- what Tailwind's Preflight must not do to generated markup ------------
+   Preflight sets `img{max-width:100%}`. A picture that came out of a pptx
+   GROUP is absolutely positioned inside `.gpi`, which is position:relative, so
+   "100%" is the width of the GROUP rather than of the slide -- and every logo
+   wider than its own group was quietly squeezed: the Fidelity mark on slide 16
+   came out 16px wide instead of 126px. The renderer writes each picture's true
+   width and height inline, read from the OOXML, and nothing may clamp them.
+   (The two hand-authored slides DO cap their logos, in _extra-slides.css, which
+   is loaded after this file and is equally specific, so those caps still win.) */
+.slide img{max-width:none;max-height:none}
+
+/* Preflight also sets `html{line-height:1.5}`. The generated slides are immune
+   -- the renderer writes every paragraph's line-height in absolute px, read out
+   of the OOXML -- but the two hand-authored slides size their rows in px and let
+   the text inherit the browser's `normal`, so the taller inherited line box
+   pushed every partner logo and label down by up to 3.5px. They get it back. */
+.slide .gtm,.slide .htw{line-height:normal}
+/* ---------------- interaction layer ----------------
+   Nothing here may touch `transform`: shapes carry their own
+   rotate()/scale() from the renderer, so motion uses the standalone
+   `translate` / `scale` properties, which compose with it. Hover state is
+   applied by interact.js as `.ix-on` rather than :hover, because shapes
+   painted above a row would otherwise swallow the pointer. */
+
+/* One tint plate per list unit, painted behind every shape, so an icon
+   block and its label read as a single row instead of tinting separately. */
+.slide .ix-plate{position:absolute;border-radius:4px;pointer-events:none;
+  background:transparent;transition:background-color .16s ease, box-shadow .18s ease}
+.slide .ix-plate.on{background-color:#f3efff}
+.slide .ix-plate.card{border-radius:2px}
+.slide .ix-plate.card.on{background-color:transparent;
+  box-shadow:0 14px 30px rgba(30,20,60,.18)}
+/* A row that owns a chart series used to tint in that series' own colour
+   (teal read as green on Registry & Asset Servicing Fee) -- now every row
+   hovers in the same neutral violet as the rest of the deck. */
+/* The panel steps aside so the tint reaches the whole entry instead of only the
+   5px it stands proud. It is painted the colour of the sheet, so at rest this
+   changes nothing at all. */
+.slide .ix-sheer{transition:background-color .18s ease}
+.slide .ix-sheer.ix-on{background-color:transparent!important}
+
+/* members of a unit move together */
+.slide .ix-row,.slide .ix-card,.slide .ix-bub,.slide .ix-logo,.slide .ix-pie{
+  transition:translate .18s ease, scale .18s ease, filter .18s ease}
+.slide .ix-row{cursor:default}
+/* a unit that answers with a tooltip says so; `.ix-row` is cursor:default,
+   which over a revenue stream that carries its share of the final column reads
+   as "nothing here". After .ix-row, so it wins on a tie. */
+.slide .ix-hint{cursor:help}
+.slide .ix-card.ix-on{translate:0 -4px}
+.slide .ix-plate.card{transition:box-shadow .18s ease, translate .18s ease}
+.slide .ix-plate.card.on{translate:0 -4px}
+
+/* Numbered-ring entries (the exec summary's 01-05) carry the hover on the ring
+   itself: it inverts to violet with a glow and its numeral turns white, while
+   the rest of the entry darkens. No plate appears behind them -- .accent keeps
+   it invisible. The renderer writes the ring fill and the numeral colour as
+   inline styles, so only !important can repaint them. */
+.slide .ix-plate.accent.on{background-color:transparent}
+.slide .ix-ring{transition:background-color .18s ease, box-shadow .18s ease,
+  translate .18s ease, scale .18s ease}
+.slide .ix-ring.ix-on{background-color:var(--violet)!important;
+  box-shadow:0 10px 26px rgba(100,50,250,.38)}
+.slide .ix-ring.ix-on p,.slide .ix-ring.ix-on span{color:#fff!important}
+.slide .ix-txt{transition:filter .18s ease}
+.slide .ix-txt.ix-on{filter:brightness(.55)}
+
+/* matrix bubbles: the old .bub:hover */
+.slide .ix-bub.ix-on,.slide .ix-bub.ix-lit{scale:1.09;
+  filter:drop-shadow(0 8px 22px rgba(80,40,200,.35));z-index:35}
+
+/* partner logos: the old .logo-cell:hover */
+.slide .ix-logo{cursor:help}
+.slide .ix-logo.ix-on{scale:1.12;filter:drop-shadow(0 8px 20px rgba(0,0,0,.20));z-index:45}
+
+/* harvey balls: the old .hb:hover */
+.slide .ix-pie{cursor:help}
+.slide .ix-pie.ix-on{scale:1.2;z-index:40}
+
+/* The hovered revenue stream is ISOLATED, not replayed: the column is stacked,
+   so animating one series on its own leaves every segment above it hanging in
+   mid-air and the printed values, which are fixed pptx text shapes, floating
+   over the gaps. Nothing moves -- the stream glows and the rest drops back.
+   Every segment is itself a hover target for its stream. */
+.slide .chart rect.bar,.slide .ix-chip{transition:filter .18s ease, opacity .18s ease}
+/* The hovered stream answers by DARKENING slightly -- no glow or shadow (they
+   spill past the segment edges and smear the bars), and the rest of the chart
+   is left exactly as painted: dimming the other streams washed the chart out. */
+.slide .chart rect.bar.ix-hot,.slide .ix-chip.ix-hot{filter:brightness(.82)}
+/* The streams that are NOT being pointed at stay at their original colour:
+   any dimming read as the chart washing out. */
+.slide .chart rect.bar.ix-dim,.slide .ix-chip.ix-dim{opacity:1;filter:none}
+/* Any label the renderer put INSIDE the chart svg goes back with its bars. The
+   ones this deck actually has are pptx shapes outside the svg: the ones carrying
+   a series fill are matched by that fill and handled above, and the plain ones
+   printed on the bars belong to no knowable series, so they are left alone --
+   which is only safe because the bars they sit on no longer wash out.
+   `!important` because the chart's grow-in sets each label's opacity inline. */
+.slide .chart text{transition:opacity .18s ease}
+.slide .chart.ix-iso text{opacity:1!important}
+
+/* table rows keep the old .tr-group tint */
+.slide .ix-trow:hover > td{background-color:#f5f2ff}
+
+/* table group accordion */
+.slide .acc-head{cursor:pointer;position:relative;user-select:none;
+  transition:background-color .14s ease}
+.slide .acc-head:hover{background-color:#efe9ff}
+.slide .acc-head:focus-visible{outline:2px solid var(--violet);outline-offset:-2px}
+.slide .acc-chev{position:absolute;right:4px;top:50%;translate:0 -50%;
+  font-size:11px;color:var(--violet);opacity:.5;transition:opacity .14s}
+.slide .acc-head:hover .acc-chev{opacity:1}
+
+/* the cyan chevron pulses, as .s1-chev.pulse did */
+.slide .ix-pulse{animation:chevpulse 2.4s ease-in-out infinite}
+@keyframes chevpulse{0%,100%{scale:1}50%{scale:1.06}}
+
+/* reveal on first view: fade + rise, one band after another at the pace set
+   in interact.js (LEAD/STEP/RISE). interact.js removes `.anim` once it has
+   played, because a forwards fill would otherwise keep overriding hover
+   motion for the rest of the session. */
+/* Transition-driven, one delay per shape (`--d`) written by interact.js, and
+   the motion chosen to suit the thing moving: body shapes fade and rise, a
+   rule or a connector is DRAWN along its length, a panel wipes open, and the
+   sheet itself only fades -- a full-bleed background that slides up reads as
+   the page slipping rather than as an entrance.
+   `translate`, never `transform`: shapes carry their own rotate()/scale(). */
+/* `.rv-i` is the same reveal one level in: a table's rows and the children of
+   an oversized group, which are the real content of slides 7, 8, 11 and 15 and
+   are invisible to a scan of the slide's own children. */
+/* `will-change` promotes each shape to its own compositor layer for the
+   duration of the entrance, so opacity and translate animate off the main
+   thread instead of repainting the stage; the teardown removes `.anim` once
+   the reveal has played, which drops the layers again. The expo-style curve
+   covers most of its distance early and settles long, which reads as one
+   continuous glide rather than a stop. */
+.slide.anim > .sp,.slide.anim > .gp,.slide.anim > img.sp,.slide.anim .rv-i{
+  opacity:0;translate:0 16px;
+  will-change:opacity,translate;
+  transition:opacity .85s cubic-bezier(.16,1,.3,1),
+             translate .85s cubic-bezier(.16,1,.3,1),
+             scale .85s cubic-bezier(.16,1,.3,1),
+             clip-path 1.05s cubic-bezier(.16,1,.3,1);
+  transition-delay:var(--d,0ms)}
+.slide.anim > .rv-fade,.slide.anim .rv-i.rv-fade{translate:none}
+.slide.anim > .rv-wipe,.slide.anim .rv-i.rv-wipe{translate:none;clip-path:inset(0 100% 0 0)}
+.slide.anim > .rv-down,.slide.anim .rv-i.rv-down{translate:none;clip-path:inset(0 0 100% 0)}
+/* A round mark -- a numbered ring, a harvey ball -- sliding upward reads
+   as a bubble coming loose, so it arrives in place instead. */
+.slide.anim > .rv-pop,.slide.anim .rv-i.rv-pop{translate:none;scale:.82}
+.slide.anim.seen > .rv-pop,.slide.anim.seen .rv-i.rv-pop{scale:1}
+/* The container of an opened table or group carries the reveal for none of its
+   own parts -- fading it would multiply their opacity by its own and cross-fade
+   the whole block. But it still has to wait its turn: a table paints its grid
+   lines and cell fills itself, so slide 7's frame otherwise stood on the page
+   before the title. `visibility` holds it back without touching its parts,
+   which override it, and it lands with the structure. */
+.slide.anim > .sp.rv-hold,.slide.anim > .gp.rv-hold{
+  opacity:1;translate:none;clip-path:none;
+  visibility:hidden;transition:visibility 0s;transition-delay:var(--d,0ms)}
+.slide.anim.seen > .sp.rv-hold,.slide.anim.seen > .gp.rv-hold{visibility:visible}
+.slide.anim .rv-i{visibility:visible}
+.slide.anim.seen > .sp,.slide.anim.seen > .gp,.slide.anim.seen > img.sp,
+.slide.anim.seen .rv-i{opacity:1;translate:0 0}
+/* only the clip-based reveals get their clip reset -- resetting it on every
+   shape would clip each one to its own box and cut off children that
+   legitimately overflow it */
+.slide.anim.seen > .rv-wipe,.slide.anim.seen > .rv-down,
+.slide.anim.seen .rv-i.rv-wipe,.slide.anim.seen .rv-i.rv-down{clip-path:inset(0 0 0 0)}
+.slide.shown > .sp,.slide.shown > .gp,.slide.shown > img.sp{opacity:1}
+/* Hover has to outrank the reveal for as long as the reveal is applied. The
+   reveal owns `translate` and `scale` while a slide is arriving, so a shape
+   pointed at before it has landed was pinned to the reveal's value: a step card
+   stopped mid-rise instead of lifting, and a matrix bubble lit by an insight row
+   did not scale. Anything hovered or lit simply drops out of the reveal and
+   plays its own motion.
+
+   The delay has to go with it: `transition-delay:var(--d)` applies to every
+   property on the shape, so the hover itself was being queued behind the
+   shape's own entrance and answered up to 700ms late. Pointing at something
+   should answer now, so a hovered shape drops the queue and moves at
+   interaction speed. */
+.slide.anim .ix-card.ix-on{translate:0 -4px}
+.slide.anim .ix-bub.ix-on,.slide.anim .ix-bub.ix-lit{scale:1.09}
+.slide.anim .ix-logo.ix-on{scale:1.12}
+.slide.anim .ix-pie.ix-on{scale:1.2}
+.slide.anim .ix-card.ix-on,.slide.anim .ix-bub.ix-on,.slide.anim .ix-bub.ix-lit,
+.slide.anim .ix-logo.ix-on,.slide.anim .ix-pie.ix-on,.slide.anim .ix-ring.ix-on{
+  transition-delay:0ms;transition-duration:.18s}
+/* The gold "focus" outline is a conclusion, so interact.js delays it until the
+   content it points at has settled -- and then DRAWS it, first point to last,
+   as if someone were tracing it. The element itself only fades in; the drawing
+   is done in interact.js with a mask that sweeps along the path, because
+   animating the dash offset of a dashed line would just march the dashes. */
+.slide.anim > .ix-focus{translate:none}
+.slide.anim.seen > .ix-focus{transition-duration:.18s}
+
+/* tooltip */
+#tip{position:fixed;z-index:400;background:#1a1a2e;color:#fff;padding:7px 11px;
+  border-radius:7px;font-size:12.5px;font-family:var(--ui);pointer-events:none;
+  opacity:0;transition:opacity .12s;box-shadow:0 8px 24px rgba(0,0,0,.35);
+  max-width:280px;line-height:1.35}
+#tip.show{opacity:1}
+@media (prefers-reduced-motion:reduce){
+  .slide.anim > .sp,.slide.anim > .gp,.slide.anim > img.sp,.slide.anim .rv-i{
+    opacity:1!important;translate:none!important;scale:none!important;
+    clip-path:none!important;transition:none!important}
+  /* a held container is kept back with visibility, which the rule above does
+     not cover -- without this a table stays invisible until its slide is
+     scrolled into view, while everything around it is already there */
+  .slide.anim > .rv-hold{visibility:visible!important}
+  .slide .ix-pulse{animation:none}
+  .slide [class*="ix-"]{translate:none!important;scale:none!important}
+  html{scroll-behavior:auto}
+}
+
